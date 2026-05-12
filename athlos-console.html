@@ -1,0 +1,1475 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Athlos · Operations Console</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT@9..144,300..700,30&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+  :root {
+    --paper: #f7f4ee;
+    --paper-2: #efeae0;
+    --ink: #14130f;
+    --ink-2: #2a2823;
+    --muted: #6a6760;
+    --muted-2: #918e86;
+    --hair: #d8d3c7;
+    --hair-2: #c8c2b2;
+    --card: #fdfbf6;
+    --fast: #a7402f;
+    --fast-bg: #f1d9d3;
+    --stable: #a47918;
+    --stable-bg: #ecdfc0;
+    --slow: #4f6d44;
+    --slow-bg: #d8e0cd;
+    --positive: #4f6d44;
+    --negative: #a7402f;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'DM Sans', system-ui, sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+    font-weight: 400;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Typography */
+  .display { font-family: 'Fraunces', Georgia, serif; font-weight: 400; letter-spacing: -0.02em; }
+  .mono { font-family: 'JetBrains Mono', monospace; font-variant-numeric: tabular-nums; }
+  .eyebrow {
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  /* Layout */
+  .container {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 0 48px;
+  }
+
+  /* Top Bar */
+  .topbar {
+    border-bottom: 1px solid var(--hair);
+    background: var(--paper);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    backdrop-filter: blur(8px);
+  }
+  .topbar-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 0;
+  }
+  .brand-mark {
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+  }
+  .brand-mark .wordmark {
+    font-family: 'Fraunces', serif;
+    font-weight: 500;
+    font-size: 22px;
+    letter-spacing: -0.01em;
+  }
+  .brand-mark .divider {
+    color: var(--hair-2);
+    font-weight: 300;
+  }
+  .brand-mark .subtitle {
+    font-size: 12px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-weight: 500;
+  }
+  .topbar-meta {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .mock-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--ink);
+    color: var(--paper);
+    padding: 5px 10px;
+    font-size: 10px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    font-weight: 500;
+  }
+  .mock-badge::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    background: #d4a942;
+    border-radius: 50%;
+  }
+  .sync {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .sync .dot {
+    width: 6px;
+    height: 6px;
+    background: var(--slow);
+    border-radius: 50%;
+    box-shadow: 0 0 0 3px rgba(79, 109, 68, 0.18);
+  }
+
+  /* Section */
+  section {
+    padding: 80px 0 40px;
+    border-bottom: 1px solid var(--hair);
+  }
+  section:last-of-type { border-bottom: none; }
+
+  .section-head {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    margin-bottom: 44px;
+    gap: 32px;
+  }
+  .section-head .left { flex: 1; }
+  .section-head h2 {
+    font-family: 'Fraunces', serif;
+    font-weight: 400;
+    font-size: 52px;
+    line-height: 1.05;
+    letter-spacing: -0.025em;
+    margin-top: 12px;
+  }
+  .section-head h2 em {
+    font-style: italic;
+    font-weight: 300;
+  }
+  .section-head .right {
+    text-align: right;
+    color: var(--muted);
+    font-size: 13px;
+  }
+  .section-head .right .period {
+    font-family: 'Fraunces', serif;
+    font-size: 18px;
+    color: var(--ink);
+    margin-bottom: 4px;
+  }
+
+  /* KPI Grid */
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0;
+    border-top: 1px solid var(--hair);
+    border-bottom: 1px solid var(--hair);
+    margin-bottom: 48px;
+  }
+  .kpi {
+    padding: 28px 24px 28px 0;
+    border-right: 1px solid var(--hair);
+  }
+  .kpi:last-child { border-right: none; padding-right: 0; }
+  .kpi:nth-child(n+2) { padding-left: 24px; }
+  .kpi .label {
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 14px;
+    font-weight: 500;
+  }
+  .kpi .value {
+    font-family: 'Fraunces', serif;
+    font-size: 38px;
+    font-weight: 400;
+    line-height: 1;
+    letter-spacing: -0.02em;
+    color: var(--ink);
+    margin-bottom: 10px;
+  }
+  .kpi .value .unit {
+    font-size: 18px;
+    color: var(--muted);
+    margin-left: 2px;
+  }
+  .kpi .delta {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .delta.up { color: var(--positive); }
+  .delta.down { color: var(--negative); }
+  .delta .arrow { font-size: 10px; }
+  .delta .vs { color: var(--muted); font-weight: 400; margin-left: 4px; font-family: 'DM Sans', sans-serif; }
+
+  /* Chart area */
+  .chart-block {
+    background: var(--card);
+    border: 1px solid var(--hair);
+    padding: 32px;
+    margin-bottom: 48px;
+  }
+  .chart-block-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 28px;
+  }
+  .chart-block-head h3 {
+    font-family: 'Fraunces', serif;
+    font-weight: 400;
+    font-size: 22px;
+    letter-spacing: -0.01em;
+  }
+  .chart-legend {
+    display: flex;
+    gap: 24px;
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .chart-legend .item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .chart-legend .swatch {
+    width: 14px;
+    height: 2px;
+  }
+  .chart-canvas-wrap {
+    height: 320px;
+    position: relative;
+  }
+
+  /* Channel table */
+  .channel-block {
+    background: var(--card);
+    border: 1px solid var(--hair);
+    margin-bottom: 48px;
+  }
+  .channel-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 28px 32px 20px;
+    border-bottom: 1px solid var(--hair);
+  }
+  .channel-head h3 {
+    font-family: 'Fraunces', serif;
+    font-weight: 400;
+    font-size: 22px;
+    letter-spacing: -0.01em;
+  }
+  .channel-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  .channel-table th {
+    text-align: right;
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-weight: 500;
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--hair);
+  }
+  .channel-table th:first-child { text-align: left; padding-left: 32px; }
+  .channel-table th:last-child { padding-right: 32px; }
+  .channel-table td {
+    text-align: right;
+    padding: 14px 16px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    color: var(--ink);
+    border-bottom: 1px solid var(--hair);
+  }
+  .channel-table td:first-child {
+    text-align: left;
+    font-family: 'DM Sans', sans-serif;
+    padding-left: 32px;
+  }
+  .channel-table td:last-child { padding-right: 32px; }
+  .channel-table tr.group-head td {
+    background: rgba(20, 19, 15, 0.025);
+    font-weight: 500;
+    font-size: 12px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--ink);
+  }
+  .channel-table tr.sub td:first-child {
+    padding-left: 56px;
+    color: var(--muted);
+  }
+  .channel-table tr.total td {
+    font-weight: 500;
+    border-top: 1px solid var(--hair-2);
+    border-bottom: none;
+    background: var(--paper-2);
+  }
+  .channel-table tr:last-child td { border-bottom: none; }
+  .channel-table .pill-off {
+    display: inline-block;
+    background: var(--paper-2);
+    color: var(--muted);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 10px;
+    padding: 2px 8px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-left: 8px;
+  }
+
+  /* Two-up grid (acquisition + retention summary) */
+  .two-up {
+    display: grid;
+    grid-template-columns: 1.4fr 1fr;
+    gap: 24px;
+  }
+  .panel {
+    background: var(--card);
+    border: 1px solid var(--hair);
+    padding: 32px;
+  }
+  .panel h3 {
+    font-family: 'Fraunces', serif;
+    font-weight: 400;
+    font-size: 22px;
+    letter-spacing: -0.01em;
+    margin-bottom: 6px;
+  }
+  .panel .sub {
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 24px;
+  }
+  .acq-split {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 28px;
+    margin-bottom: 24px;
+  }
+  .acq-item .label {
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 8px;
+    font-weight: 500;
+  }
+  .acq-item .value {
+    font-family: 'Fraunces', serif;
+    font-size: 32px;
+    line-height: 1;
+    letter-spacing: -0.02em;
+    margin-bottom: 4px;
+  }
+  .acq-item .meta {
+    font-size: 12px;
+    color: var(--muted);
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .acq-bar {
+    height: 6px;
+    background: var(--paper-2);
+    position: relative;
+    margin-top: 12px;
+    overflow: hidden;
+  }
+  .acq-bar .new-fill {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    background: var(--ink);
+  }
+  .acq-bar-legend {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 8px;
+    font-size: 11px;
+    color: var(--muted);
+    font-family: 'JetBrains Mono', monospace;
+  }
+
+  .ret-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .ret-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--hair);
+  }
+  .ret-row:last-child { border-bottom: none; }
+  .ret-row .name {
+    font-size: 13px;
+    color: var(--ink);
+  }
+  .ret-row .stats {
+    text-align: right;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+  }
+  .ret-row .stats .big {
+    color: var(--ink);
+    font-size: 14px;
+    font-weight: 500;
+  }
+  .ret-row .stats .small {
+    color: var(--muted);
+    font-size: 11px;
+  }
+
+  /* Inventory section */
+  .inv-summary {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0;
+    border-top: 1px solid var(--hair);
+    border-bottom: 1px solid var(--hair);
+    margin-bottom: 40px;
+  }
+  .inv-tile {
+    padding: 32px 0;
+    padding-right: 32px;
+    border-right: 1px solid var(--hair);
+  }
+  .inv-tile:nth-child(n+2) { padding-left: 32px; }
+  .inv-tile:last-child { border-right: none; }
+  .inv-tile .tile-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+  .inv-tile .tile-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+  }
+  .inv-tile .tile-label {
+    font-size: 11px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    font-weight: 500;
+  }
+  .inv-tile .tile-value {
+    font-family: 'Fraunces', serif;
+    font-size: 56px;
+    line-height: 1;
+    letter-spacing: -0.025em;
+    margin-bottom: 8px;
+  }
+  .inv-tile .tile-meta {
+    font-size: 13px;
+    color: var(--muted);
+    line-height: 1.4;
+  }
+  .inv-tile.fast .tile-dot { background: var(--fast); }
+  .inv-tile.fast .tile-label { color: var(--fast); }
+  .inv-tile.stable .tile-dot { background: var(--stable); }
+  .inv-tile.stable .tile-label { color: var(--stable); }
+  .inv-tile.slow .tile-dot { background: var(--slow); }
+  .inv-tile.slow .tile-label { color: var(--slow); }
+
+  .inv-table-wrap {
+    background: var(--card);
+    border: 1px solid var(--hair);
+  }
+  .inv-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  .inv-table th {
+    text-align: left;
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+    font-weight: 500;
+    padding: 18px 16px;
+    border-bottom: 1px solid var(--hair);
+  }
+  .inv-table th:first-child { padding-left: 32px; }
+  .inv-table th:last-child { padding-right: 32px; }
+  .inv-table th.num { text-align: right; }
+  .inv-table td {
+    padding: 16px;
+    border-bottom: 1px solid var(--hair);
+    font-size: 13px;
+    vertical-align: middle;
+  }
+  .inv-table td:first-child { padding-left: 32px; }
+  .inv-table td:last-child { padding-right: 32px; }
+  .inv-table td.num {
+    text-align: right;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .inv-table tr:last-child td { border-bottom: none; }
+  .inv-table .product-name {
+    font-weight: 500;
+    color: var(--ink);
+    margin-bottom: 2px;
+  }
+  .inv-table .colour-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .inv-table .swatch-dot {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    border: 1px solid rgba(0,0,0,0.08);
+    flex-shrink: 0;
+  }
+  .inv-table .colour-name {
+    color: var(--muted-2);
+    font-size: 12px;
+    text-transform: capitalize;
+  }
+
+  .status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 10px;
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    font-weight: 500;
+    border-radius: 1px;
+  }
+  .status-badge .badge-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+  }
+  .status-badge.fast { background: var(--fast-bg); color: var(--fast); }
+  .status-badge.fast .badge-dot { background: var(--fast); }
+  .status-badge.stable { background: var(--stable-bg); color: var(--stable); }
+  .status-badge.stable .badge-dot { background: var(--stable); }
+  .status-badge.slow { background: var(--slow-bg); color: var(--slow); }
+  .status-badge.slow .badge-dot { background: var(--slow); }
+
+  .recommendation {
+    font-size: 12px;
+    color: var(--muted);
+    font-style: italic;
+  }
+
+  /* Sell-through bar in cell */
+  .sellthrough {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 6px;
+  }
+  .sellthrough .pct {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    color: var(--ink);
+  }
+  .sellthrough .bar {
+    width: 80px;
+    height: 3px;
+    background: var(--paper-2);
+    position: relative;
+  }
+  .sellthrough .bar .fill {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+  }
+  .sellthrough .bar .fill.fast { background: var(--fast); }
+  .sellthrough .bar .fill.stable { background: var(--stable); }
+  .sellthrough .bar .fill.slow { background: var(--slow); }
+
+  /* Swatch automation section */
+  .swatch-demo {
+    background: var(--card);
+    border: 1px solid var(--hair);
+    padding: 48px;
+  }
+  .swatch-product-head {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    margin-bottom: 40px;
+    padding-bottom: 28px;
+    border-bottom: 1px solid var(--hair);
+  }
+  .swatch-product-head .product-name {
+    font-family: 'Fraunces', serif;
+    font-size: 36px;
+    font-weight: 400;
+    letter-spacing: -0.02em;
+    line-height: 1.05;
+  }
+  .swatch-product-head .product-meta {
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 6px;
+  }
+  .swatch-product-head .product-price {
+    font-family: 'Fraunces', serif;
+    font-size: 22px;
+    color: var(--ink);
+  }
+
+  .compare-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 48px;
+  }
+  .compare-col .col-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 24px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--hair);
+  }
+  .compare-col .col-tag {
+    font-size: 10px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    font-weight: 500;
+    padding: 4px 10px;
+    background: var(--ink);
+    color: var(--paper);
+  }
+  .compare-col.before .col-tag { background: var(--muted); }
+  .compare-col .col-title {
+    font-family: 'Fraunces', serif;
+    font-size: 16px;
+    color: var(--ink);
+  }
+  .swatch-list {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .swatch-card {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 14px;
+    background: var(--paper);
+    border: 1px solid var(--hair);
+    transition: transform 0.3s ease;
+  }
+  .swatch-card.oos {
+    opacity: 0.45;
+  }
+  .swatch-card .swatch-big {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: 1px solid rgba(0,0,0,0.1);
+    flex-shrink: 0;
+  }
+  .swatch-card .swatch-meta {
+    flex: 1;
+  }
+  .swatch-card .colour-label {
+    font-family: 'Fraunces', serif;
+    font-size: 17px;
+    text-transform: capitalize;
+    margin-bottom: 4px;
+  }
+  .swatch-card .size-row {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+  }
+  .size-pill {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    padding: 3px 7px;
+    border: 1px solid var(--hair-2);
+    color: var(--ink);
+    background: var(--card);
+  }
+  .size-pill.out {
+    color: var(--muted-2);
+    text-decoration: line-through;
+    background: var(--paper-2);
+  }
+  .swatch-card .availability {
+    font-size: 11px;
+    color: var(--muted);
+    font-family: 'JetBrains Mono', monospace;
+    text-align: right;
+    min-width: 70px;
+  }
+  .swatch-card .availability .num {
+    font-size: 15px;
+    color: var(--ink);
+    font-weight: 500;
+    display: block;
+    margin-bottom: 2px;
+    font-family: 'Fraunces', serif;
+  }
+
+  /* Footer note */
+  .footer-note {
+    padding: 56px 0;
+    text-align: center;
+    color: var(--muted);
+    font-size: 12px;
+    border-top: 1px solid var(--hair);
+  }
+  .footer-note .row {
+    max-width: 640px;
+    margin: 0 auto;
+    line-height: 1.7;
+  }
+  .footer-note em {
+    font-family: 'Fraunces', serif;
+    font-style: italic;
+    color: var(--ink);
+  }
+
+  /* Mock data inline note */
+  .mock-inline {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--muted);
+    border: 1px solid var(--hair-2);
+    padding: 3px 8px;
+    font-weight: 500;
+  }
+  .mock-inline::before {
+    content: '';
+    width: 5px;
+    height: 5px;
+    background: #d4a942;
+    border-radius: 50%;
+  }
+
+  /* Hero intro at top of dashboard */
+  .hero-intro {
+    padding: 48px 0 24px;
+    border-bottom: 1px solid var(--hair);
+    margin-bottom: 0;
+  }
+  .hero-intro h1 {
+    font-family: 'Fraunces', serif;
+    font-weight: 300;
+    font-size: 72px;
+    line-height: 0.98;
+    letter-spacing: -0.035em;
+    margin-bottom: 24px;
+    max-width: 900px;
+  }
+  .hero-intro h1 em {
+    font-style: italic;
+    font-weight: 300;
+  }
+  .hero-intro .lede {
+    font-size: 16px;
+    color: var(--muted);
+    max-width: 580px;
+    line-height: 1.6;
+  }
+</style>
+</head>
+<body>
+
+<!-- Top Bar -->
+<div class="topbar">
+  <div class="container topbar-inner">
+    <div class="brand-mark">
+      <span class="wordmark">Athlos</span>
+      <span class="divider">/</span>
+      <span class="subtitle">Operations Console</span>
+    </div>
+    <div class="topbar-meta">
+      <span class="mock-badge">Prototype · Mock Data</span>
+      <span class="sync"><span class="dot"></span> Synced 12 May, 09:42 IST</span>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- Hero -->
+  <div class="hero-intro">
+    <div class="eyebrow">A unified view · May 2026</div>
+    <h1>Less guesswork. <em>Faster decisions.</em><br>Better capital allocation.</h1>
+    <p class="lede">One page replacing the monthly spreadsheet. Live inventory health, channel performance, and production signals — all sourced from Shopify, Meta, Klaviyo, and your WhatsApp BSP.</p>
+  </div>
+
+  <!-- ============================== -->
+  <!-- 1. PERFORMANCE DASHBOARD       -->
+  <!-- ============================== -->
+  <section>
+    <div class="section-head">
+      <div class="left">
+        <div class="eyebrow">Section One</div>
+        <h2>Performance <em>at a glance</em></h2>
+      </div>
+      <div class="right">
+        <div class="period">April 2026</div>
+        <div>Full month · 30 days</div>
+      </div>
+    </div>
+
+    <!-- KPI Grid -->
+    <div class="kpi-grid">
+      <div class="kpi">
+        <div class="label">Net Revenue</div>
+        <div class="value">₹37.44<span class="unit">L</span></div>
+        <div class="delta down"><span class="arrow">▼</span> 1.7% <span class="vs">vs March</span></div>
+      </div>
+      <div class="kpi">
+        <div class="label">Orders</div>
+        <div class="value">1,304</div>
+        <div class="delta down"><span class="arrow">▼</span> 4.3% <span class="vs">vs March</span></div>
+      </div>
+      <div class="kpi">
+        <div class="label">Blended ROAS</div>
+        <div class="value">4.10<span class="unit">x</span></div>
+        <div class="delta down"><span class="arrow">▼</span> 56.9% <span class="vs">vs March</span></div>
+      </div>
+      <div class="kpi">
+        <div class="label">Blended CAC</div>
+        <div class="value">₹700</div>
+        <div class="delta down"><span class="arrow">▲</span> 138% <span class="vs">vs March</span></div>
+      </div>
+    </div>
+
+    <!-- Trend chart -->
+    <div class="chart-block">
+      <div class="chart-block-head">
+        <h3>Revenue, ad spend & ROAS · last five months</h3>
+        <div class="chart-legend">
+          <div class="item"><span class="swatch" style="background: var(--ink);"></span>Net Revenue</div>
+          <div class="item"><span class="swatch" style="background: var(--fast);"></span>Ad Spend</div>
+          <div class="item"><span class="swatch" style="background: var(--stable); height: 0; border-top: 2px dashed var(--stable);"></span>Blended ROAS</div>
+        </div>
+      </div>
+      <div class="chart-canvas-wrap">
+        <canvas id="trendChart"></canvas>
+      </div>
+    </div>
+
+    <!-- Channel table -->
+    <div class="channel-block">
+      <div class="channel-head">
+        <h3>Channel performance · April 2026</h3>
+        <span class="mock-inline">Mocked from Oct–Apr report</span>
+      </div>
+      <table class="channel-table">
+        <thead>
+          <tr>
+            <th>Channel</th>
+            <th>Spend</th>
+            <th>Revenue</th>
+            <th>Orders</th>
+            <th>ROAS</th>
+            <th>CAC</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr class="group-head"><td colspan="6">Performance Marketing</td></tr>
+          <tr class="sub">
+            <td>Meta · TOF</td>
+            <td>₹4,72,766</td>
+            <td>₹14,71,915</td>
+            <td>504</td>
+            <td>3.11x</td>
+            <td>₹938</td>
+          </tr>
+          <tr class="sub">
+            <td>Meta · BOF</td>
+            <td>₹1,02,177</td>
+            <td>₹5,20,476</td>
+            <td>171</td>
+            <td>5.09x</td>
+            <td>₹598</td>
+          </tr>
+          <tr class="sub">
+            <td>Google · TOF</td>
+            <td>₹2,69,066</td>
+            <td>₹13,10,135</td>
+            <td>452</td>
+            <td>4.87x</td>
+            <td>—</td>
+          </tr>
+          <tr>
+            <td><strong>Performance subtotal</strong></td>
+            <td>₹8,44,009</td>
+            <td>₹32,96,672</td>
+            <td>1,127</td>
+            <td>3.91x</td>
+            <td>₹749</td>
+          </tr>
+          <tr class="group-head"><td colspan="6">Retention</td></tr>
+          <tr class="sub">
+            <td>Email</td>
+            <td>₹20,863</td>
+            <td>₹1,94,160</td>
+            <td>75</td>
+            <td>9.31x</td>
+            <td>₹278</td>
+          </tr>
+          <tr class="sub">
+            <td>WhatsApp</td>
+            <td>₹48,312</td>
+            <td>₹2,53,657</td>
+            <td>102</td>
+            <td>5.25x</td>
+            <td>₹474</td>
+          </tr>
+          <tr>
+            <td><strong>Retention subtotal</strong></td>
+            <td>₹69,175</td>
+            <td>₹4,47,817</td>
+            <td>177</td>
+            <td>6.47x</td>
+            <td>₹391</td>
+          </tr>
+          <tr class="total">
+            <td>Total</td>
+            <td>₹9,13,184</td>
+            <td>₹37,44,489</td>
+            <td>1,304</td>
+            <td>4.10x</td>
+            <td>₹700</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Two-up: acquisition + retention summary -->
+    <div class="two-up">
+      <div class="panel">
+        <h3>Customer acquisition</h3>
+        <div class="sub">New vs. existing · April 2026</div>
+        <div class="acq-split">
+          <div class="acq-item">
+            <div class="label">New Customers</div>
+            <div class="value">559</div>
+            <div class="meta">₹17.21L revenue · ₹1,327 CAC</div>
+          </div>
+          <div class="acq-item">
+            <div class="label">Existing Customers</div>
+            <div class="value">836</div>
+            <div class="meta">₹26.76L revenue · ₹205 approx CAC</div>
+          </div>
+        </div>
+        <div class="acq-bar">
+          <div class="new-fill" style="width: 40%;"></div>
+        </div>
+        <div class="acq-bar-legend">
+          <span>40% New</span>
+          <span>60% Existing</span>
+        </div>
+        <div style="margin-top: 28px; padding-top: 24px; border-top: 1px solid var(--hair); display: flex; gap: 32px;">
+          <div>
+            <div class="label" style="font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; font-weight: 500;">Repeat Rate</div>
+            <div style="font-family: 'Fraunces', serif; font-size: 24px;">14.7%</div>
+          </div>
+          <div>
+            <div class="label" style="font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; font-weight: 500;">AOV</div>
+            <div style="font-family: 'Fraunces', serif; font-size: 24px;">₹3,079</div>
+          </div>
+          <div>
+            <div class="label" style="font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; font-weight: 500;">Returns</div>
+            <div style="font-family: 'Fraunces', serif; font-size: 24px;">38</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h3>Retention channels</h3>
+        <div class="sub">Email & WhatsApp performance</div>
+        <div class="ret-list">
+          <div class="ret-row">
+            <div>
+              <div class="name">Email</div>
+              <div style="font-size: 11px; color: var(--muted); margin-top: 2px;">Klaviyo · ESP</div>
+            </div>
+            <div class="stats">
+              <div class="big">9.31x ROAS</div>
+              <div class="small">75 orders · ₹278 CAC</div>
+            </div>
+          </div>
+          <div class="ret-row">
+            <div>
+              <div class="name">WhatsApp</div>
+              <div style="font-size: 11px; color: var(--muted); margin-top: 2px;">BSP integration pending</div>
+            </div>
+            <div class="stats">
+              <div class="big">5.25x ROAS</div>
+              <div class="small">102 orders · ₹474 CAC</div>
+            </div>
+          </div>
+          <div class="ret-row">
+            <div>
+              <div class="name">Google Ads</div>
+              <div style="font-size: 11px; color: var(--muted); margin-top: 2px;">TOF only</div>
+            </div>
+            <div class="stats">
+              <div class="big">4.87x ROAS</div>
+              <div class="small">452 orders</div>
+            </div>
+          </div>
+          <div class="ret-row">
+            <div>
+              <div class="name">Meta · all stages</div>
+              <div style="font-size: 11px; color: var(--muted); margin-top: 2px;">TOF + BOF</div>
+            </div>
+            <div class="stats">
+              <div class="big">3.46x ROAS</div>
+              <div class="small">675 orders · ₹852 CAC</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================== -->
+  <!-- 2. INVENTORY MOVEMENT          -->
+  <!-- ============================== -->
+  <section>
+    <div class="section-head">
+      <div class="left">
+        <div class="eyebrow">Section Two</div>
+        <h2>Inventory <em>movement</em></h2>
+      </div>
+      <div class="right">
+        <div class="period">April 1 → April 30</div>
+        <div>Sell-through over 30 days</div>
+      </div>
+    </div>
+
+    <!-- Summary tiles -->
+    <div class="inv-summary">
+      <div class="inv-tile fast">
+        <div class="tile-head">
+          <span class="tile-dot"></span>
+          <span class="tile-label">Fast · scale production</span>
+        </div>
+        <div class="tile-value">5</div>
+        <div class="tile-meta">SKU/colours sold ≥30% of stock<br>Reorder window: 4–6 weeks</div>
+      </div>
+      <div class="inv-tile stable">
+        <div class="tile-head">
+          <span class="tile-dot"></span>
+          <span class="tile-label">Stable · maintain</span>
+        </div>
+        <div class="tile-value">4</div>
+        <div class="tile-meta">SKU/colours sold 20–30%<br>Hold current production levels</div>
+      </div>
+      <div class="inv-tile slow">
+        <div class="tile-head">
+          <span class="tile-dot"></span>
+          <span class="tile-label">Slow · no restock</span>
+        </div>
+        <div class="tile-value">6</div>
+        <div class="tile-meta">SKU/colours sold &lt;20%<br>Consider phaseout or markdown</div>
+      </div>
+    </div>
+
+    <div class="inv-table-wrap">
+      <table class="inv-table">
+        <thead>
+          <tr>
+            <th>Product</th>
+            <th>Colour</th>
+            <th class="num">Start units</th>
+            <th class="num">End units</th>
+            <th class="num">Sold</th>
+            <th class="num">Sell-through</th>
+            <th>Status</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody id="invBody">
+          <!-- Populated by JS -->
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ============================== -->
+  <!-- 3. SWATCH AUTOMATION           -->
+  <!-- ============================== -->
+  <section>
+    <div class="section-head">
+      <div class="left">
+        <div class="eyebrow">Section Three</div>
+        <h2>Swatch <em>prioritization</em></h2>
+      </div>
+      <div class="right">
+        <div class="period">Auto-sorted by availability</div>
+        <div>Updates twice daily</div>
+      </div>
+    </div>
+
+    <div class="swatch-demo">
+      <div class="swatch-product-head">
+        <div>
+          <div class="eyebrow" style="margin-bottom: 12px;">Men's · Tops</div>
+          <div class="product-name">All-Day Crew</div>
+          <div class="product-meta">10 colour variants · sizes XS–2XL</div>
+        </div>
+        <div class="product-price">₹2,490</div>
+      </div>
+
+      <div class="compare-grid">
+        <!-- BEFORE -->
+        <div class="compare-col before">
+          <div class="col-label">
+            <span class="col-tag">Before</span>
+            <span class="col-title">Current order on storefront</span>
+          </div>
+          <div class="swatch-list" id="beforeList"></div>
+        </div>
+
+        <!-- AFTER -->
+        <div class="compare-col after">
+          <div class="col-label">
+            <span class="col-tag">After</span>
+            <span class="col-title">Auto-sorted · most available first</span>
+          </div>
+          <div class="swatch-list" id="afterList"></div>
+        </div>
+      </div>
+
+      <div style="margin-top: 40px; padding-top: 32px; border-top: 1px solid var(--hair); display: flex; gap: 32px; align-items: flex-start;">
+        <div style="flex: 1;">
+          <div class="eyebrow" style="margin-bottom: 10px;">How it works</div>
+          <p style="font-size: 13px; color: var(--ink-2); line-height: 1.65; max-width: 580px;">
+            Twice daily, a scheduled job reads inventory per colour variant via the Shopify Admin API. Variants are ranked by <em style="font-family: 'Fraunces', serif;">size availability score</em> — the count of sizes in stock, weighted by core sizes (M, L) — and reordered on the storefront. Sold-out colours are pushed to the end and greyed.
+          </p>
+        </div>
+        <div style="text-align: right; min-width: 180px;">
+          <div class="eyebrow" style="margin-bottom: 10px;">Next sync</div>
+          <div style="font-family: 'Fraunces', serif; font-size: 20px;">in 2h 14m</div>
+          <div style="font-size: 11px; color: var(--muted); margin-top: 4px;">Today 18:00 IST</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <div class="footer-note">
+    <div class="row">
+      <em>A working prototype.</em> All numbers shown are sourced from your Oct 2025–May 2026 performance report. SKU and colour data is drawn from the Phaseout Collection sheet. In production, every panel updates live from Shopify, Meta, Klaviyo, and your WhatsApp BSP — no spreadsheet maintenance required.
+    </div>
+  </div>
+
+</div>
+
+<script>
+  // ===== Trend chart =====
+  const ctx = document.getElementById('trendChart').getContext('2d');
+
+  const ink = '#14130f';
+  const fast = '#a7402f';
+  const stable = '#a47918';
+  const hair = '#d8d3c7';
+  const muted = '#6a6760';
+
+  // Data from the actual sheet (in lakhs for revenue/spend, x for ROAS)
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May*'];
+  const revenue = [21.66, 27.49, 38.09, 37.44, 14.48]; // ₹ in lakhs (May is partial 1-12)
+  const spend = [5.20, 7.32, 4.00, 9.13, 2.64];
+  const roas = [4.16, 3.76, 9.52, 4.10, 4.64];
+
+  Chart.defaults.font.family = "'DM Sans', system-ui, sans-serif";
+  Chart.defaults.color = muted;
+
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: months,
+      datasets: [
+        {
+          type: 'bar',
+          label: 'Net Revenue (₹L)',
+          data: revenue,
+          backgroundColor: ink,
+          borderRadius: 0,
+          barPercentage: 0.45,
+          categoryPercentage: 0.9,
+          yAxisID: 'y',
+          order: 2
+        },
+        {
+          type: 'bar',
+          label: 'Ad Spend (₹L)',
+          data: spend,
+          backgroundColor: fast,
+          borderRadius: 0,
+          barPercentage: 0.45,
+          categoryPercentage: 0.9,
+          yAxisID: 'y',
+          order: 2
+        },
+        {
+          type: 'line',
+          label: 'ROAS (x)',
+          data: roas,
+          borderColor: stable,
+          backgroundColor: stable,
+          borderWidth: 2,
+          borderDash: [6, 4],
+          pointRadius: 4,
+          pointBackgroundColor: '#fdfbf6',
+          pointBorderColor: stable,
+          pointBorderWidth: 2,
+          tension: 0.25,
+          yAxisID: 'y1',
+          order: 1
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: ink,
+          titleFont: { family: "'Fraunces', serif", size: 14, weight: '400' },
+          bodyFont: { family: "'JetBrains Mono', monospace", size: 12 },
+          padding: 12,
+          cornerRadius: 0,
+          displayColors: true
+        }
+      },
+      scales: {
+        x: {
+          grid: { display: false },
+          border: { color: hair },
+          ticks: {
+            font: { size: 12, family: "'DM Sans', sans-serif" },
+            color: muted
+          }
+        },
+        y: {
+          position: 'left',
+          grid: { color: hair, drawTicks: false },
+          border: { display: false },
+          ticks: {
+            font: { family: "'JetBrains Mono', monospace", size: 11 },
+            color: muted,
+            callback: (v) => '₹' + v + 'L'
+          },
+          beginAtZero: true,
+          max: 50
+        },
+        y1: {
+          position: 'right',
+          grid: { display: false },
+          border: { display: false },
+          ticks: {
+            font: { family: "'JetBrains Mono', monospace", size: 11 },
+            color: stable,
+            callback: (v) => v + 'x'
+          },
+          beginAtZero: true,
+          max: 12
+        }
+      }
+    }
+  });
+
+  // ===== Inventory table =====
+  // Colour hex map (approximations of named colours)
+  const colourMap = {
+    'iris': '#5b5e8c',
+    'jet black': '#1a1a1a',
+    'espresso': '#3c2820',
+    'lakshadweep': '#3b88a8',
+    'elliot': '#a89878',
+    'santa red': '#a83229',
+    'navy blue': '#1f2d52',
+    'pondicherry': '#d4a368',
+    'samarkand': '#5a7a8c',
+    'taif': '#c19a82',
+    'moss green': '#5a6b3d',
+    'shiro': '#f0ece1',
+    'icelandic blue': '#8fa4b8',
+    'fennel': '#b8b88a',
+    'berkley': '#3d4a5c',
+    'napa': '#7c5a3d',
+    'white': '#f5f1e8',
+    'andaman': '#4a6b6b',
+    'cosmo': '#d4928f',
+    'fog': '#b8b8b0',
+    'olive': '#6b6a3d',
+    'taj': '#c4926a',
+    'orchid': '#a87aa8',
+    'shiraz': '#5c1f29',
+    'rainforest': '#2d5a3d',
+    'flamingo': '#e89b8a',
+    'tamarind': '#8a3d2a',
+    'jodhpur': '#c47a4a'
+  };
+
+  // Inventory data — using actual SKUs from the Phaseout sheet
+  const inventory = [
+    { product: "Men's: All-Day Crew", colour: 'pondicherry', start: 142, end: 92, status: 'fast' },
+    { product: "Men's: Distance Tee", colour: 'lakshadweep', start: 98, end: 58, status: 'fast' },
+    { product: "Women's: Zero Tee", colour: 'pondicherry', start: 76, end: 46, status: 'fast' },
+    { product: "Men's: Training Raglan", colour: 'espresso', start: 84, end: 54, status: 'fast' },
+    { product: "Men's: Zero Tee", colour: 'elliot', start: 112, end: 76, status: 'fast' },
+    { product: "Women's: All-Day Crew", colour: 'taif', start: 88, end: 66, status: 'stable' },
+    { product: "Men's: Long Sleeve Tee", colour: 'moss green', start: 64, end: 48, status: 'stable' },
+    { product: "Men's: AGILE Singlet", colour: 'berkley', start: 72, end: 54, status: 'stable' },
+    { product: "Women's: Distance Tee", colour: 'fog', start: 56, end: 43, status: 'stable' },
+    { product: "Men's: Merino Baselayer", colour: 'icelandic blue', start: 48, end: 41, status: 'slow' },
+    { product: "Men's: Sun Hoodie", colour: 'white', start: 92, end: 78, status: 'slow' },
+    { product: "Men's: The Polo", colour: 'shiro', start: 58, end: 51, status: 'slow' },
+    { product: "Women's: Zero Tee", colour: 'olive', start: 42, end: 37, status: 'slow' },
+    { product: "Men's: All-Day Crew", colour: 'iris', start: 68, end: 60, status: 'slow' },
+    { product: "Women's: Long Sleeve Tee", colour: 'navy blue', start: 54, end: 49, status: 'slow' },
+  ];
+
+  const actions = {
+    fast: 'Reorder · +30% next run',
+    stable: 'Maintain production',
+    slow: 'Hold · review at Q-end'
+  };
+
+  const statusLabels = {
+    fast: 'Fast',
+    stable: 'Stable',
+    slow: 'Slow'
+  };
+
+  const invBody = document.getElementById('invBody');
+  inventory.forEach(item => {
+    const sold = item.start - item.end;
+    const pct = Math.round((sold / item.start) * 1000) / 10;
+    const fillWidth = Math.min(pct, 100);
+    const swatch = colourMap[item.colour] || '#999';
+
+    const row = document.createElement('tr');
+    row.innerHTML = `
+      <td><div class="product-name">${item.product}</div></td>
+      <td>
+        <div class="colour-row">
+          <span class="swatch-dot" style="background: ${swatch};"></span>
+          <span class="colour-name">${item.colour}</span>
+        </div>
+      </td>
+      <td class="num">${item.start}</td>
+      <td class="num">${item.end}</td>
+      <td class="num">${sold}</td>
+      <td class="num">
+        <div class="sellthrough">
+          <span class="pct">${pct}%</span>
+          <div class="bar"><div class="fill ${item.status}" style="width: ${fillWidth}%;"></div></div>
+        </div>
+      </td>
+      <td>
+        <span class="status-badge ${item.status}">
+          <span class="badge-dot"></span>${statusLabels[item.status]}
+        </span>
+      </td>
+      <td><span class="recommendation">${actions[item.status]}</span></td>
+    `;
+    invBody.appendChild(row);
+  });
+
+  // ===== Swatch automation =====
+  // Define colour variants with size availability
+  const sizes = ['XS', 'S', 'M', 'L', 'XL', '2XL'];
+
+  const swatchVariants = [
+    { colour: 'iris', inStock: ['M'], total: 8 },
+    { colour: 'jet black', inStock: ['S', 'M', 'L'], total: 24 },
+    { colour: 'espresso', inStock: ['XS', 'S', 'M', 'L'], total: 38 },
+    { colour: 'lakshadweep', inStock: [], total: 0 },
+    { colour: 'elliot', inStock: ['S', 'M'], total: 14 },
+    { colour: 'santa red', inStock: ['L', 'XL'], total: 11 },
+    { colour: 'pondicherry', inStock: ['XS', 'S', 'M', 'L', 'XL'], total: 52 },
+    { colour: 'samarkand', inStock: ['M', 'L'], total: 12 },
+    { colour: 'navy blue', inStock: ['M'], total: 6 },
+    { colour: 'black', inStock: ['S', 'XL'], total: 10 }
+  ];
+
+  // BEFORE order: arbitrary current order (e.g. by creation date)
+  const beforeOrder = ['iris', 'jet black', 'espresso', 'lakshadweep', 'elliot', 'santa red', 'pondicherry', 'samarkand', 'navy blue', 'black'];
+
+  // AFTER order: by size availability (count of sizes in stock) descending, then by total units
+  const afterOrder = [...swatchVariants]
+    .sort((a, b) => {
+      if (b.inStock.length !== a.inStock.length) return b.inStock.length - a.inStock.length;
+      return b.total - a.total;
+    })
+    .map(v => v.colour);
+
+  function renderSwatchList(target, orderArr) {
+    const el = document.getElementById(target);
+    el.innerHTML = '';
+    orderArr.forEach(colour => {
+      const variant = swatchVariants.find(v => v.colour === colour);
+      const oos = variant.inStock.length === 0;
+      const card = document.createElement('div');
+      card.className = 'swatch-card' + (oos ? ' oos' : '');
+      card.innerHTML = `
+        <span class="swatch-big" style="background: ${colourMap[colour] || '#999'};"></span>
+        <div class="swatch-meta">
+          <div class="colour-label">${colour}</div>
+          <div class="size-row">
+            ${sizes.map(s => `<span class="size-pill ${variant.inStock.includes(s) ? '' : 'out'}">${s}</span>`).join('')}
+          </div>
+        </div>
+        <div class="availability">
+          <span class="num">${variant.inStock.length}/6</span>
+          ${oos ? 'sold out' : variant.total + ' units'}
+        </div>
+      `;
+      el.appendChild(card);
+    });
+  }
+
+  renderSwatchList('beforeList', beforeOrder);
+  renderSwatchList('afterList', afterOrder);
+</script>
+
+</body>
+</html>
