@@ -179,6 +179,8 @@
 
   /* ---------- DIAGNOSTIC ---------- */
   .diag{border-top:1px solid var(--line)}
+  .stepper{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px 16px;max-width:none}
+  .stepper .arr{color:var(--ember);font-style:normal;font-size:.7em;transform:translateY(-.06em)}
   .diaglayout{display:grid;grid-template-columns:.95fr 1.05fr;gap:40px;margin-top:60px;align-items:start}
   .cases{display:flex;flex-direction:column;gap:10px}
   .casebtn{text-align:left;font-family:var(--sans);font-size:15px;color:var(--cream);cursor:pointer;
@@ -226,7 +228,12 @@
 
   @media(max-width:780px){
     .families,.sysgrid,.twocol,.diaglayout{grid-template-columns:1fr}
-    .panel{position:static}
+    .panel{position:static;padding:26px 22px;min-height:0}
+    .diaglayout{gap:20px}
+    .stepper{flex-direction:column;align-items:flex-start;gap:4px;font-size:clamp(27px,7.6vw,36px);line-height:1.08}
+    .stepper .arr{display:inline-block;transform:rotate(90deg);font-size:.5em;margin:6px 0 6px 8px;opacity:.85}
+    .casebtn{padding:16px 18px}
+    .casebtn .q{font-size:15.5px}
     section{padding:84px 0}
     .emocard{padding:30px}
   }
@@ -385,7 +392,13 @@
 <section class="diag">
   <div class="wrap">
     <div class="tag reveal">Putting it together</div>
-    <h2 class="reveal">Spot the behavior → find the memory → choose your <em>response</em>.</h2>
+    <h2 class="reveal stepper">
+      <span class="step">Spot the behavior</span>
+      <span class="arr" aria-hidden="true">→</span>
+      <span class="step">find the memory</span>
+      <span class="arr" aria-hidden="true">→</span>
+      <span class="step">choose your <em>response</em></span>
+    </h2>
     <p class="sub reveal">This is the real skill. Tap something a dog parent might come to you with.</p>
     <div class="diaglayout reveal">
       <div class="cases" id="cases">
@@ -471,6 +484,9 @@ cases.addEventListener('click',e=>{
   const b=e.target.closest('.casebtn');if(!b)return;
   document.querySelectorAll('.casebtn').forEach(x=>x.classList.remove('active'));
   b.classList.add('active');render(+b.dataset.i);
+  if(window.matchMedia('(max-width:780px)').matches){
+    setTimeout(()=>document.querySelector('.panel').scrollIntoView({behavior:'smooth',block:'center'}),120);
+  }
 });
 render(0);
 
