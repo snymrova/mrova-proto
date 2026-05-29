@@ -1,0 +1,516 @@
+
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>The Architecture of Canine Memory — OhMyDog</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,400&family=Hanken+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#100d0b;
+    --ink-2:#19140f;
+    --surface:#1d1813;
+    --surface-2:#241d16;
+    --line:#322a20;
+    --cream:#f4ece0;
+    --muted:#a59a8a;
+    --faint:#6f665a;
+    /* family + modulator hues */
+    --implicit:#5cc4b8;      /* cool — the dog doesn't "know" it knows */
+    --explicit:#e6a44b;      /* warm — flexible knowledge */
+    --emotion:#ff5b4d;       /* the override */
+    --ember:#f0913a;
+    --glow:rgba(240,145,58,.5);
+    --serif:"Fraunces",Georgia,serif;
+    --sans:"Hanken Grotesk",system-ui,sans-serif;
+    --mono:"JetBrains Mono",monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{
+    background:var(--ink);
+    color:var(--cream);
+    font-family:var(--sans);
+    font-weight:400;
+    line-height:1.65;
+    -webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+  }
+  body::before{ /* grain */
+    content:"";position:fixed;inset:0;z-index:1;pointer-events:none;opacity:.035;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='4'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+  .wrap{max-width:1080px;margin:0 auto;padding:0 28px;position:relative;z-index:2}
+
+  /* ---------- HERO ---------- */
+  .hero{position:relative;min-height:100vh;display:flex;align-items:center;overflow:hidden}
+  #neuro{position:absolute;inset:0;width:100%;height:100%;z-index:0;opacity:.85}
+  .hero::after{content:"";position:absolute;inset:0;z-index:1;
+    background:radial-gradient(120% 90% at 70% 30%,transparent 30%,var(--ink) 78%)}
+  .hero .wrap{z-index:2}
+  .eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.42em;text-transform:uppercase;
+    color:var(--ember);margin-bottom:30px;opacity:0;animation:rise .9s .15s forwards}
+  .hero h1{font-family:var(--serif);font-weight:400;font-size:clamp(44px,8.5vw,108px);
+    line-height:.98;letter-spacing:-.02em;max-width:14ch}
+  .hero h1 .ln{display:block;overflow:hidden}
+  .hero h1 .ln span{display:block;transform:translateY(105%);animation:slideUp 1s cubic-bezier(.16,1,.3,1) forwards}
+  .hero h1 .ln:nth-child(1) span{animation-delay:.28s}
+  .hero h1 .ln:nth-child(2) span{animation-delay:.42s}
+  .hero h1 .ln:nth-child(3) span{animation-delay:.56s}
+  .hero h1 em{font-style:italic;color:var(--ember)}
+  .lede{max-width:46ch;margin-top:34px;font-size:clamp(16px,2vw,20px);color:var(--muted);
+    opacity:0;animation:rise 1s .85s forwards}
+  .scrollcue{position:absolute;bottom:34px;left:50%;transform:translateX(-50%);z-index:2;
+    font-family:var(--mono);font-size:11px;letter-spacing:.3em;text-transform:uppercase;color:var(--faint);
+    display:flex;flex-direction:column;align-items:center;gap:12px;opacity:0;animation:rise 1s 1.3s forwards}
+  .scrollcue .bar{width:1px;height:46px;background:linear-gradient(var(--ember),transparent);
+    animation:drip 2.2s infinite}
+
+  @keyframes slideUp{to{transform:translateY(0)}}
+  @keyframes rise{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
+  @keyframes drip{0%{transform:scaleY(0);transform-origin:top}40%{transform:scaleY(1);transform-origin:top}
+    60%{transform:scaleY(1);transform-origin:bottom}100%{transform:scaleY(0);transform-origin:bottom}}
+
+  /* ---------- SECTIONS ---------- */
+  section{padding:120px 0;position:relative}
+  .tag{font-family:var(--mono);font-size:12px;letter-spacing:.3em;text-transform:uppercase;
+    color:var(--faint);display:flex;align-items:center;gap:14px;margin-bottom:26px}
+  .tag::before{content:"";width:34px;height:1px;background:var(--ember)}
+  h2{font-family:var(--serif);font-weight:400;font-size:clamp(30px,5vw,54px);
+    line-height:1.05;letter-spacing:-.015em;max-width:18ch}
+  h2 em{font-style:italic;color:var(--ember)}
+  .sub{max-width:56ch;margin-top:24px;color:var(--muted);font-size:18px}
+
+  /* reveal */
+  .reveal{opacity:0;transform:translateY(34px);transition:opacity .9s cubic-bezier(.16,1,.3,1),transform .9s cubic-bezier(.16,1,.3,1)}
+  .reveal.in{opacity:1;transform:none}
+
+  /* ---------- PREMISE ---------- */
+  .premise{border-top:1px solid var(--line)}
+  .families{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:60px}
+  .fam{padding:34px;border:1px solid var(--line);border-radius:16px;background:var(--ink-2);position:relative;overflow:hidden}
+  .fam::before{content:"";position:absolute;top:0;left:0;width:100%;height:3px}
+  .fam.imp::before{background:var(--implicit)}
+  .fam.exp::before{background:var(--explicit)}
+  .fam h3{font-family:var(--serif);font-size:24px;font-weight:500;margin-bottom:6px}
+  .fam .k{font-family:var(--mono);font-size:11px;letter-spacing:.22em;text-transform:uppercase;margin-bottom:18px}
+  .fam.imp .k{color:var(--implicit)} .fam.exp .k{color:var(--explicit)}
+  .fam p{color:var(--muted);font-size:15.5px}
+
+  /* ---------- SYSTEM CARDS ---------- */
+  .sysgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:64px}
+  .card{position:relative;padding:30px 26px 28px;border:1px solid var(--line);border-radius:16px;
+    background:linear-gradient(160deg,var(--surface),var(--ink-2));
+    transition:transform .5s cubic-bezier(.16,1,.3,1),border-color .5s,box-shadow .5s;overflow:hidden}
+  .card:hover{transform:translateY(-6px);border-color:var(--c);box-shadow:0 24px 50px -28px var(--c)}
+  .card .num{font-family:var(--serif);font-style:italic;font-size:15px;color:var(--faint)}
+  .card .badge{position:absolute;top:26px;right:24px;font-family:var(--mono);font-size:9.5px;
+    letter-spacing:.18em;text-transform:uppercase;padding:5px 9px;border-radius:30px;border:1px solid var(--c);color:var(--c)}
+  .card h3{font-family:var(--serif);font-weight:500;font-size:26px;margin:6px 0 4px;letter-spacing:-.01em}
+  .card .brain{font-family:var(--mono);font-size:11px;color:var(--c);letter-spacing:.06em;margin-bottom:20px}
+  .card h3 .sci{display:block;font-family:var(--mono);font-weight:400;font-style:normal;font-size:11px;
+    letter-spacing:.04em;color:var(--faint);margin-top:4px}
+  .tsci{display:block;font-family:var(--mono);font-size:10px;color:var(--faint);margin-top:3px;letter-spacing:.03em;font-weight:400}
+  .motif{height:46px;margin:6px 0 20px;display:flex;align-items:center}
+  .row{display:flex;gap:10px;font-size:14px;margin-top:12px;align-items:baseline}
+  .row .lab{font-family:var(--mono);font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;
+    color:var(--faint);min-width:52px;flex-shrink:0;padding-top:3px}
+  .row .val{color:var(--cream)}
+  .row .val.lev{color:var(--c);font-weight:500}
+
+  /* motif animations */
+  .m-pulse{display:flex;gap:5px;align-items:flex-end;height:32px}
+  .m-pulse i{width:5px;background:var(--c);border-radius:3px;animation:decay 2.4s infinite ease-in-out}
+  .m-pulse i:nth-child(1){height:32px;animation-delay:0s}
+  .m-pulse i:nth-child(2){height:32px;animation-delay:.18s}
+  .m-pulse i:nth-child(3){height:32px;animation-delay:.36s}
+  .m-pulse i:nth-child(4){height:32px;animation-delay:.54s}
+  .m-pulse i:nth-child(5){height:32px;animation-delay:.72s}
+  @keyframes decay{0%{transform:scaleY(1);opacity:1}70%{transform:scaleY(.12);opacity:.25}100%{transform:scaleY(.12);opacity:.18}}
+  .m-link{display:flex;align-items:center;gap:0}
+  .m-link .dot{width:13px;height:13px;border-radius:50%;background:var(--c)}
+  .m-link .wire{height:2px;width:60px;background:linear-gradient(90deg,var(--c),var(--c));position:relative;overflow:hidden}
+  .m-link .wire::after{content:"";position:absolute;top:-2px;width:8px;height:6px;border-radius:50%;
+    background:#fff;box-shadow:0 0 8px #fff;animation:travel 1.8s infinite linear}
+  @keyframes travel{from{left:-8px}to{left:60px}}
+  .m-loop{width:34px;height:34px;border:2.5px solid var(--c);border-top-color:transparent;border-radius:50%;animation:spin 2.2s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .m-chips{display:flex;gap:6px;flex-wrap:wrap}
+  .m-chips b{font-family:var(--mono);font-size:10px;font-weight:500;padding:4px 8px;border-radius:5px;
+    border:1px solid var(--c);color:var(--c);opacity:0;animation:popin .5s forwards}
+  .m-chips b:nth-child(1){animation-delay:.1s}.m-chips b:nth-child(2){animation-delay:.3s}.m-chips b:nth-child(3){animation-delay:.5s}
+  @keyframes popin{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  .m-map{display:grid;grid-template-columns:repeat(4,9px);grid-template-rows:repeat(3,9px);gap:5px;position:relative}
+  .m-map i{width:9px;height:9px;border:1px solid var(--line);border-radius:2px}
+  .m-map .pin{position:absolute;right:2px;top:-4px;width:11px;height:11px;border-radius:50% 50% 50% 0;
+    background:var(--c);transform:rotate(-45deg);animation:bob 1.8s infinite ease-in-out}
+  @keyframes bob{0%,100%{transform:rotate(-45deg) translateY(0)}50%{transform:rotate(-45deg) translateY(-5px)}}
+  .m-replay{display:flex;align-items:center;gap:8px;font-family:var(--mono);font-size:11px;color:var(--c)}
+  .m-replay .ring{width:30px;height:30px;border:2.5px solid var(--c);border-right-color:transparent;border-radius:50%;
+    animation:spin 2.4s linear infinite reverse}
+
+  /* ---------- EMOTION ---------- */
+  .emo{background:radial-gradient(80% 120% at 50% 0%,rgba(255,91,77,.14),transparent 60%);border-top:1px solid var(--line)}
+  .emo .tag::before{background:var(--emotion)}
+  .emo h2 em{color:var(--emotion)}
+  .emocard{margin-top:50px;border:1px solid rgba(255,91,77,.4);border-radius:20px;padding:46px;
+    background:linear-gradient(160deg,rgba(255,91,77,.07),var(--ink-2));position:relative;overflow:hidden}
+  .emocard::before{content:"";position:absolute;inset:0;border-radius:20px;
+    box-shadow:inset 0 0 80px rgba(255,91,77,.12);animation:breathe 4s infinite ease-in-out;pointer-events:none}
+  @keyframes breathe{0%,100%{opacity:.5}50%{opacity:1}}
+  .twocol{display:grid;grid-template-columns:1fr 1fr;gap:30px;margin-top:30px}
+  .mech h4{font-family:var(--serif);font-size:21px;font-weight:500;color:var(--emotion);margin-bottom:8px;display:flex;align-items:center;gap:10px}
+  .mech h4 .n{font-family:var(--mono);font-size:12px;border:1px solid var(--emotion);border-radius:50%;
+    width:24px;height:24px;display:grid;place-items:center;flex-shrink:0}
+  .mech p{color:var(--muted);font-size:15px}
+  .mech .case{margin-top:12px;font-size:13.5px;color:var(--cream);padding:12px 14px;border-left:2px solid var(--emotion);
+    background:rgba(255,91,77,.06);border-radius:0 8px 8px 0}
+
+  /* ---------- LAW ---------- */
+  .law{text-align:center;padding:130px 0}
+  .law .tag{justify-content:center}.law .tag::before{display:none}
+  .law blockquote{font-family:var(--serif);font-weight:400;font-size:clamp(28px,4.6vw,52px);
+    line-height:1.18;letter-spacing:-.015em;max-width:20ch;margin:0 auto}
+  .law blockquote em{font-style:italic;color:var(--emotion)}
+  .law .after{max-width:52ch;margin:36px auto 0;color:var(--muted);font-size:17px}
+
+  /* ---------- DIAGNOSTIC ---------- */
+  .diag{border-top:1px solid var(--line)}
+  .diaglayout{display:grid;grid-template-columns:.95fr 1.05fr;gap:40px;margin-top:60px;align-items:start}
+  .cases{display:flex;flex-direction:column;gap:10px}
+  .casebtn{text-align:left;font-family:var(--sans);font-size:15px;color:var(--cream);cursor:pointer;
+    padding:18px 20px;border:1px solid var(--line);border-radius:12px;background:var(--ink-2);
+    transition:border-color .3s,background .3s,transform .3s;line-height:1.4}
+  .casebtn:hover{border-color:var(--ember);transform:translateX(4px)}
+  .casebtn.active{border-color:var(--ember);background:var(--surface-2);box-shadow:0 0 0 1px var(--ember)}
+  .casebtn .q{font-style:italic;font-family:var(--serif);font-size:17px}
+  .panel{border:1px solid var(--line);border-radius:16px;background:linear-gradient(160deg,var(--surface),var(--ink-2));
+    padding:34px;min-height:340px;position:sticky;top:30px}
+  .panel .systems-strip{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:28px}
+  .chip{font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;padding:7px 11px;border-radius:30px;
+    border:1px solid var(--line);color:var(--faint);transition:all .45s cubic-bezier(.16,1,.3,1)}
+  .chip.lit{color:var(--ink);font-weight:600;transform:scale(1.06)}
+  .chip.lit.implicit{background:var(--implicit);border-color:var(--implicit);box-shadow:0 0 22px -4px var(--implicit)}
+  .chip.lit.explicit{background:var(--explicit);border-color:var(--explicit);box-shadow:0 0 22px -4px var(--explicit)}
+  .chip.lit.emotion{background:var(--emotion);border-color:var(--emotion);box-shadow:0 0 22px -4px var(--emotion)}
+  .panel .ph{font-family:var(--mono);font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--faint);margin-bottom:8px}
+  .panel .diagnosis{font-family:var(--serif);font-size:25px;font-weight:500;line-height:1.25;margin-bottom:24px;min-height:62px}
+  .panel .diagnosis em{font-style:italic;color:var(--ember)}
+  .panel .interv{font-size:16px;color:var(--cream);padding-top:22px;border-top:1px solid var(--line)}
+  .panel .interv .lab{font-family:var(--mono);font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--ember);display:block;margin-bottom:8px}
+  .fade-swap{animation:fadeSwap .5s ease}
+  @keyframes fadeSwap{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+  /* ---------- TABLE ---------- */
+  .ref{border-top:1px solid var(--line)}
+  .tablewrap{margin-top:54px;border:1px solid var(--line);border-radius:16px;overflow:hidden;overflow-x:auto}
+  table{width:100%;border-collapse:collapse;font-size:14px;min-width:640px}
+  thead th{font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--faint);
+    text-align:left;padding:18px 20px;background:var(--ink-2);border-bottom:1px solid var(--line);font-weight:500}
+  tbody td{padding:16px 20px;border-bottom:1px solid var(--line);color:var(--muted);vertical-align:top}
+  tbody tr:last-child td{border-bottom:none}
+  tbody tr:hover td{background:var(--surface-2)}
+  tbody .nm{font-family:var(--serif);font-size:16px;color:var(--cream)}
+  .dotfam{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:8px;vertical-align:middle}
+  tbody tr.emorow td{background:rgba(255,91,77,.05)}
+  tbody tr.emorow .nm{color:var(--emotion)}
+
+  /* ---------- FOOTER ---------- */
+  footer{border-top:1px solid var(--line);padding:60px 0 80px;text-align:center}
+  footer .logo{font-family:var(--serif);font-size:22px;font-style:italic}
+  footer .logo b{color:var(--ember);font-style:normal;font-weight:600}
+  footer p{color:var(--faint);font-size:13px;margin-top:10px;font-family:var(--mono);letter-spacing:.08em}
+
+  @media(max-width:780px){
+    .families,.sysgrid,.twocol,.diaglayout{grid-template-columns:1fr}
+    .panel{position:static}
+    section{padding:84px 0}
+    .emocard{padding:30px}
+  }
+  @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}
+    .hero h1 .ln span{transform:none}.reveal{opacity:1;transform:none}}
+</style>
+</head>
+<body>
+
+<!-- HERO -->
+<header class="hero">
+  <canvas id="neuro"></canvas>
+  <div class="wrap">
+    <div class="eyebrow">OhMyDog Pro Community · Memory Lesson</div>
+    <h1>
+      <span class="ln"><span>How your dog</span></span>
+      <span class="ln"><span>really <em>remembers</em></span></span>
+    </h1>
+    <p class="lede">A dog's memory isn't one single thing. It's a few different systems — and each one shows up in your dog's behavior in its own way, and needs a different response from you. Sitting on top of all of them is one force that can overpower the rest: emotion.</p>
+  </div>
+  <div class="scrollcue"><span>Scroll</span><div class="bar"></div></div>
+</header>
+
+<!-- PREMISE -->
+<section class="premise">
+  <div class="wrap">
+    <div class="tag reveal">The big idea</div>
+    <h2 class="reveal">Two kinds of memory — and one force that <em>overpowers</em> them both.</h2>
+    <p class="sub reveal">It all comes down to one skill: notice what your dog is doing, work out which kind of memory it's coming from, and choose the right response. First, the two kinds.</p>
+    <div class="families">
+      <div class="fam imp reveal">
+        <div class="k">Automatic memory (implicit)</div>
+        <h3>Runs without the dog <em>thinking</em></h3>
+        <p>Habits, timing, and learned connections that just happen on their own — the dog isn't aware of them. This is where almost everything we call "training" actually happens.</p>
+      </div>
+      <div class="fam exp reveal" style="transition-delay:.12s">
+        <div class="k">Knowing memory (explicit)</div>
+        <h3>Things the dog actually <em>knows</em></h3>
+        <p>Facts, places, and past moments the dog can remember and use in new situations — words, maps, and richer memories than people used to think dogs had.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SYSTEMS -->
+<section>
+  <div class="wrap">
+    <div class="tag reveal">Six kinds</div>
+    <h2 class="reveal">Same dog. Six different ways of <em>remembering</em>.</h2>
+    <div class="sysgrid">
+
+      <!-- 1 Working -->
+      <article class="card reveal" style="--c:var(--implicit)">
+        <span class="badge">Automatic</span>
+        <div class="num">01</div>
+        <h3>Short-term<span class="sci">(working memory)</span></h3>
+        <div class="brain">The brain's "right now" zone (prefrontal cortex)</div>
+        <div class="motif"><div class="m-pulse"><i></i><i></i><i></i><i></i><i></i></div></div>
+        <div class="row"><span class="lab">You'll see</span><span class="val">He holds onto something for just seconds, then it's gone</span></div>
+        <div class="row"><span class="lab">What to do</span><span class="val lev">Get your timing right</span></div>
+      </article>
+
+      <!-- 2 Associative -->
+      <article class="card reveal" style="--c:var(--implicit);transition-delay:.08s">
+        <span class="badge">Automatic</span>
+        <div class="num">02</div>
+        <h3>Connections<span class="sci">(associative memory)</span></h3>
+        <div class="brain">Wired all through the brain (amygdala &amp; more)</div>
+        <div class="motif"><div class="m-link"><span class="dot"></span><span class="wire"></span><span class="dot"></span></div></div>
+        <div class="row"><span class="lab">You'll see</span><span class="val">Leash means walk. Sit means food. The engine of all training</span></div>
+        <div class="row"><span class="lab">What to do</span><span class="val lev">Be consistent · reward the calm state</span></div>
+      </article>
+
+      <!-- 3 Procedural -->
+      <article class="card reveal" style="--c:var(--implicit);transition-delay:.16s">
+        <span class="badge">Automatic</span>
+        <div class="num">03</div>
+        <h3>Habits<span class="sci">(procedural memory)</span></h3>
+        <div class="brain">The brain's "autopilot" (basal ganglia &amp; cerebellum)</div>
+        <div class="motif"><div class="m-loop"></div></div>
+        <div class="row"><span class="lab">You'll see</span><span class="val">Routines the body does on its own — the door-jump, every time</span></div>
+        <div class="row"><span class="lab">What to do</span><span class="val lev">Replace it with a new habit, practised just as often</span></div>
+      </article>
+
+      <!-- 4 Semantic -->
+      <article class="card reveal" style="--c:var(--explicit)">
+        <span class="badge">Knowing</span>
+        <div class="num">04</div>
+        <h3>Words &amp; things<span class="sci">(semantic memory)</span></h3>
+        <div class="brain">Stored across the brain's surface (cortex)</div>
+        <div class="motif"><div class="m-chips"><b>"ball"</b><b>family</b><b>"walk"</b></div></div>
+        <div class="row"><span class="lab">You'll see</span><span class="val">Knows words and what things are — "ball", "walk", the family</span></div>
+        <div class="row"><span class="lab">What to do</span><span class="val lev">The effort is in teaching it — once learned, it sticks</span></div>
+      </article>
+
+      <!-- 5 Spatial -->
+      <article class="card reveal" style="--c:var(--explicit);transition-delay:.08s">
+        <span class="badge">Knowing</span>
+        <div class="num">05</div>
+        <h3>Places<span class="sci">(spatial memory)</span></h3>
+        <div class="brain">The brain's map-maker (hippocampus)</div>
+        <div class="motif"><div class="m-map"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><span class="pin"></span></div></div>
+        <div class="row"><span class="lab">You'll see</span><span class="val">Remembers places and routes — where the safe corner is</span></div>
+        <div class="row"><span class="lab">What to do</span><span class="val lev">Give the dog one calm spot of its own</span></div>
+      </article>
+
+      <!-- 6 Episodic -->
+      <article class="card reveal" style="--c:var(--explicit);transition-delay:.16s">
+        <span class="badge">Knowing</span>
+        <div class="num">06</div>
+        <h3>Past moments<span class="sci">(episodic-like memory)</span></h3>
+        <div class="brain">The brain's map-maker, again (hippocampus)</div>
+        <div class="motif"><div class="m-replay"><span class="ring"></span>replays its own past</div></div>
+        <div class="row"><span class="lab">You'll see</span><span class="val">Remembers things it did — the newest, most debated finding</span></div>
+        <div class="row"><span class="lab">What to do</span><span class="val lev">Dogs recall single moments better than we assumed</span></div>
+      </article>
+
+    </div>
+    <p class="sub reveal" style="margin-top:44px">Why do scientists add the word <em style="font-style:italic;color:var(--explicit)">"sort of"</em> here? Two reasons. First, we simply can't get inside a dog's head to <strong style="color:var(--cream);font-weight:600">prove</strong> he's re-living a memory the way we do — but not being able to prove it isn't the same as it not happening. Second, there's a real gap: dogs seem to remember <em style="font-style:italic">who</em> and <em style="font-style:italic">what</em> better than exactly <em style="font-style:italic">when</em>. The strongest sign it's true memory and not just a leftover habit? Dogs can repeat actions they were <strong style="color:var(--cream);font-weight:600">never trained</strong> to repeat — which means they learned an idea, not just a reflex.</p>
+  </div>
+</section>
+
+<!-- EMOTION MODULATOR -->
+<section class="emo">
+  <div class="wrap">
+    <div class="tag reveal">The one that rules them all</div>
+    <h2 class="reveal">Emotion isn't a seventh kind. It <em>overpowers</em> the other six.</h2>
+    <p class="sub reveal">Two parts of the brain — one for fear (the amygdala), one for events (the hippocampus) — work closely together. That teamwork is why emotional memories are far stronger and longer-lasting than ordinary ones. Two things follow that you can never ignore.</p>
+    <div class="emocard reveal">
+      <div class="twocol">
+        <div class="mech">
+          <h4><span class="n">a</span>Learned in one moment (one-trial learning)</h4>
+          <p>A scary enough experience gets stamped in instantly — <em style="color:var(--cream);font-style:italic">one</em> frightening moment is enough to create a lasting memory. No repetition needed.</p>
+          <div class="case">The car hitting him, and his human panicking, get bundled together as "this is life-or-death" — all in a single moment.</div>
+        </div>
+        <div class="mech">
+          <h4><span class="n">b</span>The fear spreads (overgeneralization)</h4>
+          <p>Strong fear blurs the details and spreads the "danger" label to whatever's nearby.</p>
+          <div class="case">A fearful dog ends up reacting to far more things than the original scare would explain — the fear spreads outward while the exact details fade.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- REHAB LAW -->
+<section class="law">
+  <div class="wrap">
+    <div class="tag reveal">The most important thing on this page</div>
+    <blockquote class="reveal">Helping a dog through a fear doesn't <em>erase</em> the old memory. It builds a new, calmer memory right <em>beside</em> it.</blockquote>
+    <p class="after reveal">Building that new memory beside the old one is called <em style="font-style:italic;color:var(--cream)">counter-conditioning</em>. The old fear is still in there, and it can come back when the dog is stressed (scientists call this <em style="font-style:italic;color:var(--cream)">spontaneous recovery</em>) — which is why a dog that's been "fine for months" can suddenly slip back. This is why healing is slow, why we never rush or overwhelm a dog, and why patience matters more than anything on a rescue case.</p>
+  </div>
+</section>
+
+<!-- DIAGNOSTIC -->
+<section class="diag">
+  <div class="wrap">
+    <div class="tag reveal">Putting it together</div>
+    <h2 class="reveal">Spot the behavior → find the memory → choose your <em>response</em>.</h2>
+    <p class="sub reveal">This is the real skill. Tap something a dog parent might come to you with.</p>
+    <div class="diaglayout reveal">
+      <div class="cases" id="cases">
+        <button class="casebtn active" data-i="0"><span class="q">"He pulls on every walk."</span></button>
+        <button class="casebtn" data-i="1"><span class="q">"He wrecks the house when left alone."</span></button>
+        <button class="casebtn" data-i="2"><span class="q">"He panics at the vet after one bad visit."</span></button>
+        <button class="casebtn" data-i="3"><span class="q">"He ignores me when I scold him an hour after he chewed a shoe."</span></button>
+        <button class="casebtn" data-i="4"><span class="q">"He jumps the moment the door opens, every time."</span></button>
+      </div>
+      <div class="panel">
+        <div class="systems-strip">
+          <span class="chip" data-sys="working">Short-term</span>
+          <span class="chip" data-sys="associative">Connections</span>
+          <span class="chip" data-sys="procedural">Habits</span>
+          <span class="chip" data-sys="semantic">Words</span>
+          <span class="chip" data-sys="spatial">Places</span>
+          <span class="chip" data-sys="episodic">Moments</span>
+          <span class="chip" data-sys="emotion">Emotion</span>
+        </div>
+        <div class="ph">What's going on</div>
+        <div class="diagnosis" id="dx"></div>
+        <div class="interv"><span class="lab">What to do</span><span id="iv"></span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- REFERENCE TABLE -->
+<section class="ref">
+  <div class="wrap">
+    <div class="tag reveal">Keep this handy</div>
+    <h2 class="reveal">The whole thing on one card.</h2>
+    <p class="sub reveal">Six kinds of memory, plus emotion sitting on top of them all.</p>
+    <div class="tablewrap reveal">
+      <table>
+        <thead><tr><th>Memory</th><th>Kind</th><th>In the brain</th><th>What you'll see</th><th>What to do</th></tr></thead>
+        <tbody>
+          <tr><td class="nm">Short-term<span class="tsci">working</span></td><td><span class="dotfam" style="background:var(--implicit)"></span>Automatic <span style="color:var(--faint)">(implicit)</span></td><td>"Right now" zone (PFC)</td><td>Holds info for seconds</td><td>Get your timing right</td></tr>
+          <tr><td class="nm">Connections<span class="tsci">associative</span></td><td><span class="dotfam" style="background:var(--implicit)"></span>Automatic <span style="color:var(--faint)">(implicit)</span></td><td>All through the brain</td><td>Leash = walk, sit = food</td><td>Be consistent</td></tr>
+          <tr><td class="nm">Habits<span class="tsci">procedural</span></td><td><span class="dotfam" style="background:var(--implicit)"></span>Automatic <span style="color:var(--faint)">(implicit)</span></td><td>The "autopilot" (basal ganglia)</td><td>Automatic routines</td><td>Replace with a new habit</td></tr>
+          <tr><td class="nm">Words &amp; things<span class="tsci">semantic</span></td><td><span class="dotfam" style="background:var(--explicit)"></span>Knowing <span style="color:var(--faint)">(explicit)</span></td><td>Brain's surface (cortex)</td><td>Knows words &amp; what things are</td><td>Effort is in teaching it</td></tr>
+          <tr><td class="nm">Places<span class="tsci">spatial</span></td><td><span class="dotfam" style="background:var(--explicit)"></span>Knowing <span style="color:var(--faint)">(explicit)</span></td><td>The map-maker (hippocampus)</td><td>Knows places &amp; routes</td><td>Give one safe spot</td></tr>
+          <tr><td class="nm">Past moments<span class="tsci">episodic-like</span></td><td><span class="dotfam" style="background:var(--explicit)"></span>Knowing <span style="color:var(--faint)">(explicit)</span></td><td>The map-maker (hippocampus)</td><td>Remembers what it did</td><td>Recalls single moments</td></tr>
+          <tr class="emorow"><td class="nm">Emotion<span class="tsci">the modulator</span></td><td><span class="dotfam" style="background:var(--emotion)"></span>Overpowers all</td><td>Amygdala &amp; hippocampus</td><td>One bad moment sticks hard</td><td>Go slow, never rush</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div class="logo"><b>OhMyDog</b> Pro Community</div>
+    <p>Understanding Your Dog's Memory · For Our Students</p>
+  </div>
+</footer>
+
+<script>
+/* ---- scroll reveal ---- */
+const io=new IntersectionObserver((es)=>{es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target)}})},{threshold:.18});
+document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
+
+/* ---- diagnostic ---- */
+const CASES=[
+ {sys:['associative'],dx:'A learned <em>connection</em>. Pulling gets him where he wants to go, so pulling keeps paying off.',iv:'Never let pulling move him forward. Only reward the calm position right beside you.'},
+ {sys:['emotion','spatial'],dx:'<em>Emotion</em> plus <em>place</em>. He\'s anxious, and he has no spot that feels safe.',iv:'Walk him to a calm, tired state first. Then build one safe spot of his own. Then practise leaving in tiny steps.'},
+ {sys:['emotion'],dx:'<em>Emotion</em>, learned in one moment. A single bad visit got stamped in as danger.',iv:'Rebuild trust slowly and never force it. The old memory stays — your job is to grow a calmer one beside it.'},
+ {sys:['working'],dx:'<em>Short-term</em> memory. He never connected the telling-off to the shoe.',iv:'Fix your timing, not the dog. A telling-off an hour later means nothing to him.'},
+ {sys:['procedural','associative'],dx:'A <em>habit</em> set off by a trigger — the door opening starts an automatic routine.',iv:'Teach a new routine (like "go to your spot" when the door opens) and practise it just as often.'}
+];
+const cases=document.getElementById('cases'),chips=[...document.querySelectorAll('.chip')],
+  dx=document.getElementById('dx'),iv=document.getElementById('iv');
+const FAM={working:'implicit',associative:'implicit',procedural:'implicit',semantic:'explicit',spatial:'explicit',episodic:'explicit',emotion:'emotion'};
+function render(i){
+  const c=CASES[i];
+  chips.forEach(ch=>{ch.className='chip';});
+  c.sys.forEach(s=>{const ch=chips.find(x=>x.dataset.sys===s);if(ch){ch.classList.add('lit',FAM[s]);}});
+  dx.classList.remove('fade-swap');iv.parentElement.classList.remove('fade-swap');void dx.offsetWidth;
+  dx.innerHTML=c.dx;iv.textContent=c.iv;
+  dx.classList.add('fade-swap');
+}
+cases.addEventListener('click',e=>{
+  const b=e.target.closest('.casebtn');if(!b)return;
+  document.querySelectorAll('.casebtn').forEach(x=>x.classList.remove('active'));
+  b.classList.add('active');render(+b.dataset.i);
+});
+render(0);
+
+/* ---- hero neural network ---- */
+const cv=document.getElementById('neuro'),ctx=cv.getContext('2d');
+let W,H,nodes=[],pulses=[];
+function size(){W=cv.width=cv.offsetWidth*devicePixelRatio;H=cv.height=cv.offsetHeight*devicePixelRatio;build();}
+function build(){
+  nodes=[];const n=Math.min(70,Math.floor(W*H/26000));
+  for(let i=0;i<n;i++)nodes.push({x:Math.random()*W,y:Math.random()*H,vx:(Math.random()-.5)*.18,vy:(Math.random()-.5)*.18,r:(Math.random()*1.6+.8)*devicePixelRatio});
+}
+const LINK=150*devicePixelRatio;
+function spawnPulse(){
+  if(nodes.length<2)return;
+  const a=nodes[Math.floor(Math.random()*nodes.length)];
+  let b=null,bd=LINK;
+  for(const o of nodes){if(o===a)continue;const d=Math.hypot(o.x-a.x,o.y-a.y);if(d<bd){bd=d;b=o;}}
+  if(b)pulses.push({a,b,t:0});
+}
+function loop(){
+  ctx.clearRect(0,0,W,H);
+  for(const p of nodes){p.x+=p.vx;p.y+=p.vy;if(p.x<0||p.x>W)p.vx*=-1;if(p.y<0||p.y>H)p.vy*=-1;}
+  // links
+  for(let i=0;i<nodes.length;i++)for(let j=i+1;j<nodes.length;j++){
+    const a=nodes[i],b=nodes[j],d=Math.hypot(a.x-b.x,a.y-b.y);
+    if(d<LINK){ctx.strokeStyle='rgba(240,145,58,'+(0.10*(1-d/LINK))+')';ctx.lineWidth=devicePixelRatio*.6;
+      ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();}
+  }
+  // nodes
+  for(const p of nodes){ctx.fillStyle='rgba(244,236,224,.55)';ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,7);ctx.fill();}
+  // pulses
+  pulses=pulses.filter(p=>p.t<1);
+  for(const p of pulses){p.t+=.018;const x=p.a.x+(p.b.x-p.a.x)*p.t,y=p.a.y+(p.b.y-p.a.y)*p.t;
+    const g=ctx.createRadialGradient(x,y,0,x,y,9*devicePixelRatio);
+    g.addColorStop(0,'rgba(255,140,60,.9)');g.addColorStop(1,'rgba(255,140,60,0)');
+    ctx.fillStyle=g;ctx.beginPath();ctx.arc(x,y,9*devicePixelRatio,0,7);ctx.fill();}
+  if(Math.random()<.08)spawnPulse();
+  requestAnimationFrame(loop);
+}
+if(!matchMedia('(prefers-reduced-motion:reduce)').matches){size();loop();addEventListener('resize',size);}
+</script>
+</body>
+</html>
